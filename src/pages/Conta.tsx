@@ -1,47 +1,47 @@
 import { Center, SimpleGrid, Spinner } from "@chakra-ui/react"
-import { useParams, useNavigate } from "react-router-dom"
-import { useContext, useEffect, useState } from "react"
-import { api } from "../api"
+import { useParams, useNavigate, Link } from "react-router-dom"
+import { useContext, useEffect } from "react"
 import CardInfo from "../components/CardInfo"
 import { AppContext } from "../components/AppContext"
+import { getUserAllLocalStorage } from "../services/storage"
 
-interface UserData {
+export interface UserData {
     email: string
-    password: string
+    password?: string
     name: string
     balance: number
     id: string
 }
 
 const Conta = () => {
-    const [ userData, setUserData ] = useState<null | UserData>()
     const { id } = useParams()
     const navigate = useNavigate()
 
-    const { isLoggedIn } = useContext(AppContext)
+    const { isLoggedIn, user, setUser } = useContext(AppContext)
 
     !isLoggedIn && navigate('/')
 
-    useEffect(() => {
-        const getData = async () => {
-            const data: any | UserData = await api
-            setUserData(data)
-        }
-
-        getData()
-    }, [])
-
     const actualData = new Date()
 
-    if(userData && id !== userData.id) {
+    if(user && id !== user.id) {
         navigate('/')
     }
+
+    useEffect(() => {
+        const userExists = getUserAllLocalStorage()
+
+        if(userExists) {
+            const { user } = JSON.parse(userExists);
+            
+            user && setUser(user);
+          }
+    }, [])
   
     return (
         <Center>
             <SimpleGrid columns={2} spacing={8} paddingTop={16}>
                 {
-                    userData === undefined || userData === null ?
+                    user.id === undefined || user.id === null ?
                     (  
                         <Center>
                             <Spinner size='xl' color='white'/>
@@ -49,8 +49,11 @@ const Conta = () => {
                     ) : 
                     (
                         <>
-                            <CardInfo mainContent={`Bem vinda ${userData?.name}`} content={`${actualData.getDay()} / ${actualData.getMonth()} / ${actualData.getFullYear()} ${actualData.getHours()}:${actualData.getMinutes()}`} />
-                            <CardInfo mainContent='Saldo' content={`R$ ${userData.balance}`}/>
+                            <CardInfo mainContent={`Bem vinda ${user?.name}`} content={`${actualData.getDay()} / ${actualData.getMonth()} / ${actualData.getFullYear()} ${actualData.getHours()}:${actualData.getMinutes()}`} />
+                            <Link to={'/infoconta'}>
+                                <CardInfo mainContent='Saldo' content={`R$ ${user.balance}`}/>
+                            </Link>
+                            
                         </>
                     )
                 }
